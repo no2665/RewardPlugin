@@ -1,0 +1,7 @@
+name: RewardPlugin
+main: com.github.no2665.RewardPlugin.RewardPlugin
+version: 0.1
+commands:
+   echo:
+      description: echos everything your say
+      usage: /echo [your message]

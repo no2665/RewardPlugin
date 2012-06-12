@@ -1,0 +1,32 @@
+#Layout for this config file is as follows
+#
+#Rewards:
+# - level: <PowerLevel player must be at to receive rewards>
+#   rewards: <Data Value> <Quantity> 
+# - level: <A higher PowerLevel>
+#   rewards: <Data Value> <Quantity>
+#
+#Example layout
+#
+#Rewards:
+# - level: 0
+#   rewards: 290 1
+# - level: 5
+#   rewards: 37 1
+# - level: 10
+#   rewards: 273 1 275 1
+# - level: 20
+#   rewards: 282 1 298 1 301 1
+# 
+#The levels should be in order, from smallest to biggest.
+#A player with a power level of 7 will get the level 5 rewards,
+#in this case a yellow flower. The player will NOT get the level 0
+#rewards.
+
+Rewards:
+ - level: 0
+   rewards: 263
+ - level: 1
+   rewards: 265 5 263 21
+ - level: 2
+   rewards: 266
