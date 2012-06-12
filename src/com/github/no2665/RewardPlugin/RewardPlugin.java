@@ -22,46 +22,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class RewardPlugin extends JavaPlugin implements Listener{
 	
-	/*****************
-	 * ok, so player joins for first time. so PlayerTime = 0
-	 * Then they play, and times increases.
-	 * Log off.
-	 * Log back on in a day or so. 
-	 * just keep a map of the last valid join and the players
-	 * if currentTime - LastJoin > 24hours then
-	 * reward them with tools
-	 * set a record of the time (the last valid join) that you rewarded them, 
-	 * 			to be used later to measure 24 hours from.
-	 * else 
-	 * do not reward them, do not track that time
-	 * 
-	 * ok so, theres the plan.
-	 * so get player time, etc, when player joins.
-	 * Can then reward them if a valid join.
-	 * Can also send them some sort of message?
-	 * 
-	 * in onEnable() load up a map from player to lastValidJoin (long?)
-	 * when a player joins check map.
-	 * if in the map
-	 * 		check if valid join
-	 * else
-	 * 		create new entry with valid time set to time of joining server
-	 * 
-	 * right seems simple enough, don't need any scheduling then...
-	 * 
-	 * 
-	 * 0    10  16 19   24 0    10
-	 * |----|   |--|     /|-----|
-	 * j    l   j  l      j     l
-	 * clearly third join is valid
-	 *****************/
+	/**
+	 * Bugs I can think of:
+	 * 	-Secondary data that is used for some blocks, i.e. red wool (35:14), not be an int, 
+	 * 		so need a test to see if there is secondary data, in the ItemPicker class.
+	 *
+	 * Improvements:
+	 *  -Config file can set time between rewards
+	 *  -Config can set whether or not the plugin is enabled
+	 *  -Config should set a message given to players when they receive rewards
+	 *  -Add a way of adding money as a reward
+	 *  -Edit config file through commands
+	 */
 	
 	Map<String, Long> validJoins;
-	
-	/*@Override
-	public void onLoad(){
-		//probably not needed, but is called before onEnable
-	}*/
 	
 	//Everything starts here
 	@Override
@@ -70,7 +44,6 @@ public class RewardPlugin extends JavaPlugin implements Listener{
 		if(!file.exists()){
 			saveDefaultConfig();
 		}
-		Configuration config = getConfig();
 		validJoins = loadMap("plugins" + File.separator + "RewardPlugin" + File.separator + "RewardData.bin");
 		this.getServer().getPluginManager().registerEvents(this, this);
 	}
@@ -85,27 +58,26 @@ public class RewardPlugin extends JavaPlugin implements Listener{
 	@EventHandler
 	public void onPlayerLogin(PlayerLoginEvent event){
 		final Player player = event.getPlayer();
-		Inventory inventory = player.getInventory();
+		
+		//Create new data for new players
+		if(!validJoins.containsKey(player.getName()))
+			validJoins.put(player.getName(), System.currentTimeMillis());
+		
+		long lastValidJoin = validJoins.get(player.getName());
+		//86400000 for 24 hours
+		if(System.currentTimeMillis() - lastValidJoin >= 10000){
+			//Reset timer, and reward player
+			validJoins.put(player.getName(), System.currentTimeMillis());
+			ItemPicker.pickItem(player, this);
+		}
+		
+		//Send the player a friendly message.
 		getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 			public void run(){
 				player.sendMessage("Here are your rewards for today");
 			}
 		}, 20L);
-		if(validJoins.containsKey(player.getName())){
-			long lastValidJoin = validJoins.get(player.getName());
-			//86400000 for 24 hours
-			if(System.currentTimeMillis() - lastValidJoin >= 10000){
-				//Reset timer, and reward player
-				validJoins.put(player.getName(), System.currentTimeMillis());
-				inventory.addItem(new ItemStack(Material.DIAMOND, 1));
-				ItemPicker.pickItem(player, this);
-			}
-			
-		}
-		else{
-			validJoins.put(player.getName(), System.currentTimeMillis());
-			inventory.addItem(new ItemStack(Material.DIAMOND_PICKAXE, 1));
-		}
+		
 	}
 	
 	public void saveMap(Map<String, Long> validJoinsMap, String path)
@@ -118,6 +90,8 @@ public class RewardPlugin extends JavaPlugin implements Listener{
 		}catch(Exception e){
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
 	public HashMap<String, Long> loadMap(String path) {
 		try{
 			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path));
@@ -128,7 +102,6 @@ public class RewardPlugin extends JavaPlugin implements Listener{
 		return new HashMap<String, Long>();
 	}
 	
-	//Used to deal with commands
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if(command.getName().equals("echo")){
