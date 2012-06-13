@@ -10,23 +10,26 @@
 #
 #Rewards:
 # - level: 0
-#   rewards: 290 1
+#   rewards: 35:4 2 #2x yellow wool
 # - level: 5
-#   rewards: 37 1
+#   rewards: 37 1 #1x yellow flower
 # - level: 10
-#   rewards: 273 1 275 1
+#   rewards: 273 1 275 1 #1x stone shovel, 1x stone axe
 # - level: 20
-#   rewards: 282 1 298 1 301 1
+#   rewards: 282 1 298 1 301 1 #1x mushroom stew, 1x leather helmet, 1x leather boots
 # 
 #The levels should be in order, from smallest to biggest.
 #A player with a power level of 7 will get the level 5 rewards,
 #in this case a yellow flower. The player will NOT get the level 0
 #rewards.
 
+Enabled: True
+TimeBetweenRewards: 10000
+RewardMessage: Here are your rewards for today!
 Rewards:
  - level: 0
-   rewards: 263
+   rewards: 263 1 
  - level: 1
    rewards: 265 5 263 21
  - level: 2
-   rewards: 266
+   rewards: 266 1

@@ -2,6 +2,16 @@ name: RewardPlugin
 main: com.github.no2665.RewardPlugin.RewardPlugin
 version: 0.1
 commands:
-   echo:
-      description: echos everything your say
-      usage: /echo [your message]
+   addReward:
+      description: Add a rewards to a new or existing set of rewards
+      permissions: editConfigPerms
+      usage: /addReward <level> <Data Value> <quantity> ...
+   deleteReward:
+      description: Delete a whole set of rewards
+      permissions: editConfigPerms
+      usage: /deleteReward <level>
+    
+permissions:
+   editConfigPerms:
+      description: Allows you to edit the config file from commands
+      default: op
