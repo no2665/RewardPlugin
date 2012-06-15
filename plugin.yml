@@ -1,5 +1,5 @@
-name: RewardPlugin
-main: com.github.no2665.RewardPlugin.RewardPlugin
+name: mcReward
+main: com.github.no2665.McReward.McRewardPlugin
 version: 0.1
 commands:
    addReward:

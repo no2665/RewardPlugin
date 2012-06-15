@@ -1,35 +1,74 @@
 #Layout for this config file is as follows
 #
+#Enabled: <True/False>
+#TimeBetweenRewards: <Days>:<Hours>:<Minutes>
+#RewardMessage: <Message to send to players when they get rewards>
 #Rewards:
 # - level: <PowerLevel player must be at to receive rewards>
 #   rewards: <Data Value> <Quantity> 
+#	money: <amount>
+#	enchantments: <item> <enchantment>:<level> <enchantment>:<level> ... <item> <enchantment>:<level> ... ...
 # - level: <A higher PowerLevel>
-#   rewards: <Data Value> <Quantity>
+#   money: <amount>
 #
 #Example layout
 #
+#Enabled: True #if false players will no longer receive rewards
+#TimeBetweenRewards: 1:12:0 #Rewards will be given every 1 day and 12 hours
+#RewardMessage: Thank you for logging on! Have some freebies!
 #Rewards:
 # - level: 0
 #   rewards: 35:4 2 #2x yellow wool
+#	money: 10.01 #Player will get 10.01 of your servers currency
 # - level: 5
 #   rewards: 37 1 #1x yellow flower
 # - level: 10
 #   rewards: 273 1 275 1 #1x stone shovel, 1x stone axe
+#	enchantments: 306 0:5 1:1 #Iron helmet with protection against the environment and fire at levels 5 and 1 respectively
 # - level: 20
 #   rewards: 282 1 298 1 301 1 #1x mushroom stew, 1x leather helmet, 1x leather boots
+#	money: 200 #Player will get 200 of your servers currency
 # 
+#
 #The levels should be in order, from smallest to biggest.
 #A player with a power level of 7 will get the level 5 rewards,
 #in this case a yellow flower. The player will NOT get the level 0
 #rewards.
+#
+#Rewards and RewardMessage are optional
+#Enabled and TimeBetweenRewards are required.
+#Of the Rewards tag, the level tag is required, 
+#but all other tags are optional.
+#
+#Have some item IDs:
+#Leather helmet = 298, leather chestplate = 299, leather leggings = 300, leather boots = 301
+#Iron helmet = 306, iron chestplate = 307, iron leggings = 308, iron boots = 309
+#Gold helmet = 314, gold chestplate = 315, gold leggings = 316, gold boots = 317
+#Diamond helmet = 310, diamond chestplate = 311, diamond leggings = 312, diamond boots = 313
+#Wood sword = 268, stone sword = 272, iron sword = 267, gold sword = 283, diamond sword = 276
+#Wood shovel = 269, stone shovel = 273, iron shovel = 256, gold shovel = 284, diamond shovel = 277
+#Wood pickaxe = 270, stone pickaxe = 274, iron pickaxe = 257, gold pickaxe = 285, diamond pickaxe = 278
+#Wood axe = 271, stone axe = 275, iron axe = 258, gold axe = 286, diamond axe = 279
+#Wood hoe = 290, stone hoe = 291, iron hoe = 292, gold hoe = 294, diamond hoe = 293
+#Bow = 261
+#
+#And some enchantment IDs:
+#PROTECTION_ENVIRONMENTAL = 0, PROTECTION_FIRE = 1, PROTECTION_FALL = 2, PROTECTION_EXPLOSIONS = 3, PROTECTION_PROJECTILE = 4
+#OXYGEN = 5, WATER_WORKER = 6, 
+#DAMAGE_ALL = 16, DAMAGE_UNDEAD = 17, DAMAGE_ARTHROPODS = 18, KNOCKBACK = 19, FIRE_ASPECT = 20, LOOT_BONUS_MOBS = 21
+#DIG_SPEED = 32, SILK_TOUCH = 33, DURABILITY = 34, LOOT_BONUS_BLOCKS = 35
+#ARROW_DAMAGE = 48, ARROW_KNOCKBACK = 49, ARROW_FIRE = 50, ARROW_INFINITE = 51
 
 Enabled: True
-TimeBetweenRewards: 10000
+TimeBetweenRewards: 0:0:1
 RewardMessage: Here are your rewards for today!
 Rewards:
  - level: 0
    rewards: 263 1 
+   money: 200
  - level: 1
    rewards: 265 5 263 21
  - level: 2
    rewards: 266 1
+ - level: 4
+   enchantments: 276 16:5 19:5 274 34:5
