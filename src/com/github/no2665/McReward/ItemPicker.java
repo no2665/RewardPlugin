@@ -1,6 +1,7 @@
 package com.github.no2665.McReward;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 import net.milkbowl.vault.economy.Economy;
@@ -24,7 +25,7 @@ public class ItemPicker {
 				Map<?, ?> selectedMap = selectMap();
 				if(selectedMap != null){
 					if(selectedMap.containsKey("rewards")){
-						addRewards(selectedMap.get("rewards").toString());
+						addRewards(splitString(selectedMap.get("rewards").toString()));
 					}
 					if(selectedMap.containsKey("money")){
 						addMoney(selectedMap.get("money").toString());
@@ -33,6 +34,14 @@ public class ItemPicker {
 						addEnchantment(selectedMap.get("enchantments").toString());
 					}
 				}
+			}
+			
+			public String splitString(String selectedString){
+				if(selectedString.contains("or")){
+					String[] split = selectedString.split("or");
+					return split[(new Random()).nextInt(split.length)];
+				}
+				return selectedString;
 			}
 			
 			public Map<?, ?> selectMap(){
@@ -50,23 +59,48 @@ public class ItemPicker {
 			}
 			
 			public void addRewards(String selectedRewards){
-				Scanner scanItems = new Scanner(selectedRewards);
-				while(scanItems.hasNext()){
-					String itemType = scanItems.next();
-					int quantity = 1;
-					if(scanItems.hasNext()) quantity = scanItems.nextInt();
-					if(itemType.contains(":")){
-						String[] split = itemType.split(":");
-						int itemID = Integer.parseInt(split[0]);
-						int itemData = Integer.parseInt(split[1]);
-						player.getInventory().addItem(new MaterialData(itemID, (byte) itemData).toItemStack(quantity));
+				if(selectedRewards.trim().equalsIgnoreCase("random")){
+					ItemStack i = null;
+					Random rnd = new Random();
+					if(rnd.nextDouble() > 0.5d){
+						i = new ItemStack(rnd.nextInt(123), 1 + rnd.nextInt(64));
 					}
-					else player.getInventory().addItem(new ItemStack(Integer.parseInt(itemType), quantity));
+					else{
+						i = new ItemStack(256  + rnd.nextInt(128), 1 + rnd.nextInt(64));
+					}
+					player.getInventory().addItem(i);
+				}
+				else{
+					Scanner scanItems = new Scanner(selectedRewards);
+					while(scanItems.hasNext()){
+						String itemType = scanItems.next();
+						int quantity = 1;
+						if(scanItems.hasNext()) quantity = scanItems.nextInt();
+						if(itemType.contains(":")){
+							String[] split = itemType.split(":");
+							int itemID = Integer.parseInt(split[0]);
+							int itemData = Integer.parseInt(split[1]);
+							player.getInventory().addItem(new MaterialData(itemID, (byte) itemData).toItemStack(quantity));
+						}
+						else{
+							player.getInventory().addItem(new ItemStack(Integer.parseInt(itemType), quantity));
+						}
+					}
 				}
 			}
 		
 			public void addMoney(String selectedMoney){
-				double money = Double.parseDouble(selectedMoney);
+				double money = 0;
+				if(selectedMoney.contains("between")){
+					Scanner scan = new Scanner(selectedMoney);
+					scan.next();
+					double min = scan.nextDouble();
+					double max = scan.nextDouble();
+					money = min + (new Random()).nextDouble() * (max - min);
+				}
+				else {
+					money = Double.parseDouble(selectedMoney);
+				}
 				RegisteredServiceProvider<Economy> economyProvider = plugin.getServer().getServicesManager().getRegistration(Economy.class);
 				Economy economy = null;
 				if (economyProvider != null) {

@@ -10,6 +10,7 @@
 #	enchantments: <item> <enchantment>:<level> <enchantment>:<level> ... <item> <enchantment>:<level> ... ...
 # - level: <A higher PowerLevel>
 #   money: <amount>
+#   enchantments: <tool/weapon/armour> <enchantment ID>:<enchantment level>
 #
 #Example layout
 #
@@ -28,6 +29,10 @@
 # - level: 20
 #   rewards: 282 1 298 1 301 1 #1x mushroom stew, 1x leather helmet, 1x leather boots
 #	money: 200 #Player will get 200 of your servers currency
+# - level: 25
+#   money: between 200.25 400 #Player will get between 200 and 400 of your servers money
+# - level: 30
+#   rewards: 47 10 or 84 1 #Player will randomly get either 10 bookshelves or 1 jukebox (both with equal chances)
 # 
 #
 #The levels should be in order, from smallest to biggest.
@@ -39,6 +44,18 @@
 #Enabled and TimeBetweenRewards are required.
 #Of the Rewards tag, the level tag is required, 
 #but all other tags are optional.
+#
+#The reward tag has two different "random" features.
+#The first is that players will randomly be given predefined sets of rewards.
+#The usage for this is as follows:
+#   rewards: <Data value> <Quantity> ... or <Data value> <Quantity> ... or ...
+#The "or" word is used to separate different sets, and the players will randomly be given one of the sets.
+#The second random feature will give players a random amount (up to 64) of any item.
+#It is used like this:
+#   rewards: random
+#Be careful as this can give players any items (including sponges, chain-mail, portal blocks etc)
+#The two random features can be combined.
+#   rewards: <Data value> <Quantity> ... or random or <Data value> <Quantity> ...
 #
 #Have some item IDs:
 #Leather helmet = 298, leather chestplate = 299, leather leggings = 300, leather boots = 301
