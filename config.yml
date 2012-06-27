@@ -2,6 +2,7 @@
 #
 #Enabled: <True/False>
 #TimeBetweenRewards: <Days>:<Hours>:<Minutes>
+#automaticCollection: <true/false>
 #RewardMessage: <Message to send to players when they get rewards>
 #Rewards:
 # - level: <PowerLevel player must be at to receive rewards>
@@ -16,6 +17,7 @@
 #
 #Enabled: True #if false players will no longer receive rewards
 #TimeBetweenRewards: 1:12:0 #Rewards will be given every 1 day and 12 hours
+#automaticCollection: false #Players will have to use the /receive command to get their rewards
 #RewardMessage: Thank you for logging on! Have some freebies!
 #Rewards:
 # - level: 0
@@ -40,7 +42,7 @@
 #in this case a yellow flower. The player will NOT get the level 0
 #rewards.
 #
-#Rewards and RewardMessage are optional
+#Rewards, RewardMessage and automaticCollection are optional
 #Enabled and TimeBetweenRewards are required.
 #Of the Rewards tag, the level tag is required, 
 #but all other tags are optional.
@@ -78,7 +80,8 @@
 
 Enabled: True
 TimeBetweenRewards: 0:0:1
-RewardMessage: Here are your rewards for today!
+automaticCollection: false
+RewardMessage: You have rewards ready for collection!
 Rewards:
  - level: 0
    rewards: 263 1 

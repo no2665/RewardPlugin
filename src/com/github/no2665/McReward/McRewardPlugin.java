@@ -5,30 +5,28 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.gmail.nossr50.util.Users;
 
 public class McRewardPlugin extends JavaPlugin implements Listener{
 	
-	/**
-	 * Improvements:
-	 *  -Add a way of adding money as a reward
-	 *  -Also enchantments
-	 *  
-	 *  -Make ItemPicker check things more
-	 *  	For instance it should check if the config file contains the Rewards key
-	 */
-	
 	private Map<String, Long> validJoins;
+	public Map<String, List<ItemStack>> playersRewards;
 	
 	@Override
 	public void onLoad(){
@@ -41,20 +39,22 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 	//Everything starts here
 	@Override
 	public void onEnable(){ 
-		validJoins = loadMap("plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
+		validJoins = loadLoginMap("plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
+		playersRewards = loadRewardMap("plugins" + File.separator + "mcReward" + File.separator + "PlayerData.bin");
 		this.getServer().getPluginManager().registerEvents(this, this);
 	}
 	 
 	//And ends here
 	@Override
 	public void onDisable(){ 
-		saveMap(validJoins, "plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
+		saveLoginMap(validJoins, "plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
+		saveRewardMap(playersRewards, "plugins" + File.separator + "mcReward" + File.separator + "PlayerData.bin");
 		this.getServer().getScheduler().cancelTasks(this);
 	}
-	
+
+	//Try PlayerJoinEvent instead. To see if the message is delayed or not?
 	@EventHandler
 	public void onPlayerLogin(PlayerLoginEvent event){
-		//RELOAD CONFIG???
 		reloadConfig();
 		if(getConfig().getBoolean("Enabled")){
 			if(getConfig().contains("Rewards")){
@@ -89,13 +89,35 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		}
 	}
 	
-	private int getTimeBetweenRewards(){
+	private long getTimeBetweenRewards(){
 		String[] split = getConfig().getString("TimeBetweenRewards").split(":");
-		//             Days                            +                 minutes                 +              hours
-		return (Integer.parseInt(split[0]) * 86400000) + (Integer.parseInt(split[1]) *  3600000) + (Integer.parseInt(split[2]) * 60000);
+		long time = 0;
+		for(int i = 0; i < split.length; i++){
+			if(i == 0){
+				time += Integer.parseInt(split[0]) * 86400000;
+			}
+			else if(i == 1){
+				time += Integer.parseInt(split[1]) * 3600000;
+			}
+			else if(i == 2){
+				time += Integer.parseInt(split[2]) * 60000;
+			}
+		}
+		return time;
 	}
 	
-	private void saveMap(Map<String, Long> validJoinsMap, String path)
+	private void saveRewardMap(Map<String, List<ItemStack>> validJoinsMap, String path)
+	{
+		try{
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path));
+			oos.writeObject(validJoinsMap);
+			oos.flush();
+			oos.close();
+		}catch(Exception e){
+		}
+	}
+	
+	private void saveLoginMap(Map<String, Long> validJoinsMap, String path)
 	{
 		try{
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path));
@@ -107,7 +129,18 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 	}
 	
 	@SuppressWarnings("unchecked")
-	private HashMap<String, Long> loadMap(String path) {
+	private HashMap<String, List<ItemStack>> loadRewardMap(String path) {
+		try{
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path));
+			Object result = ois.readObject();
+			return (HashMap<String, List<ItemStack>>) result;
+		}catch(Exception e){
+		}
+		return new HashMap<String, List<ItemStack>>();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private HashMap<String, Long> loadLoginMap(String path) {
 		try{
 			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path));
 			Object result = ois.readObject();
@@ -117,9 +150,86 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		return new HashMap<String, Long>();
 	}
 	
+	public void giveRewards(Player player){
+		ArrayList<ItemStack> l = (ArrayList<ItemStack>) playersRewards.get(player.getName());
+		if(l.isEmpty()){
+			player.sendMessage("You currently do not have any rewards to collect");
+		}
+		else{
+			int highestIndex = -1;
+			HashMap<Integer, ItemStack> unableToGive = null;
+			for(int i = 0; i < l.size(); i++){
+				unableToGive = player.getInventory().addItem(l.get(i));
+				if(unableToGive.isEmpty()){
+					highestIndex = i;
+				}
+				else{
+					player.sendMessage("Unable to give you all of your rewards");
+					break;
+				}
+			}
+			if(highestIndex > -1){
+				for(int i = 0; i <= highestIndex; i++){
+					l.remove(0);
+				}
+			}
+			playersRewards.put(player.getName(), l);
+		}
+	}
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if(command.getName().equals("deleteReward")){
+		if(command.getName().equals("receive") || command.getAliases().contains("receiveRewards")){
+			if(sender instanceof Player && sender.hasPermission("receiveRewards")){
+				if(playersRewards.containsKey(sender.getName())){
+					giveRewards((Player) sender);
+				}
+			}
+		}
+		else if(command.getName().equals("listRewards")){
+			if(sender instanceof Player && sender.hasPermission("receiveRewards")){
+				int powerLevel = Users.getProfile((Player) sender).getPowerLevel();
+				Map<?, ?> map = null;
+				for(Map<?, ?> m : getConfig().getMapList("Rewards")){
+					if(Integer.parseInt(m.get("level").toString()) <= powerLevel){
+						map = m;
+					}
+					else break;
+				}
+				sender.sendMessage("You will get:");
+				if(map.containsKey("rewards")){
+					Scanner scan = new Scanner(map.get("rewards").toString());
+					String rewardString = "";
+					while(scan.hasNext()){
+						String item = scan.next();
+						if(item.equals("or")){
+							rewardString += "OR ";
+							continue;
+						}
+						else if(item.contains(":")){
+							item = (item.split(":"))[0];
+						}
+						item = Material.getMaterial(Integer.parseInt(item)).toString().toLowerCase();
+						int quantity = 1;
+						if(scan.hasNext()) quantity = scan.nextInt();
+						rewardString += item + " x" + quantity + ", "; 
+					}
+					sender.sendMessage("These rewards: " + rewardString);
+				}
+				if(map.containsKey("money")){
+					String moneyString = map.get("money").toString();
+					if(moneyString.contains("between")){
+						Scanner scan = new Scanner(moneyString);
+						moneyString = scan.next() + " " + scan.next() + " and " + scan.next();
+					}
+					sender.sendMessage("This much money: " + moneyString);
+				}
+				if(map.containsKey("enchantments")){
+					sender.sendMessage("These enchanted items: " + map.get("enchantments"));
+				}
+			}
+		}
+		else if(command.getName().equals("deleteReward")){
 			if(sender.hasPermission("editConfigPerms")){
 				if(args.length == 0) return false;
 				boolean found = false;

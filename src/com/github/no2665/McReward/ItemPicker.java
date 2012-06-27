@@ -1,5 +1,6 @@
 package com.github.no2665.McReward;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
@@ -33,6 +34,9 @@ public class ItemPicker {
 					if(selectedMap.containsKey("enchantments")){
 						addEnchantment(selectedMap.get("enchantments").toString());
 					}
+				}
+				if(config.contains("automaticCollection") && config.getBoolean("automaticCollection")){
+					plugin.giveRewards(player);
 				}
 			}
 			
@@ -68,7 +72,7 @@ public class ItemPicker {
 					else{
 						i = new ItemStack(256  + rnd.nextInt(128), 1 + rnd.nextInt(64));
 					}
-					player.getInventory().addItem(i);
+					addRewardsToList(i);
 				}
 				else{
 					Scanner scanItems = new Scanner(selectedRewards);
@@ -80,12 +84,25 @@ public class ItemPicker {
 							String[] split = itemType.split(":");
 							int itemID = Integer.parseInt(split[0]);
 							int itemData = Integer.parseInt(split[1]);
-							player.getInventory().addItem(new MaterialData(itemID, (byte) itemData).toItemStack(quantity));
+							addRewardsToList(new MaterialData(itemID, (byte) itemData).toItemStack(quantity));
 						}
 						else{
-							player.getInventory().addItem(new ItemStack(Integer.parseInt(itemType), quantity));
+							addRewardsToList(new ItemStack(Integer.parseInt(itemType), quantity));
 						}
 					}
+				}
+			}
+			
+			private void addRewardsToList(ItemStack i){
+				if(plugin.playersRewards.containsKey(player.getName())){
+					ArrayList<ItemStack> l = (ArrayList<ItemStack>) plugin.playersRewards.get(player.getName());
+					l.add(i);
+					plugin.playersRewards.put(player.getName(), l);
+				}
+				else{
+					ArrayList<ItemStack> l = new ArrayList<ItemStack>();
+					l.add(i);
+					plugin.playersRewards.put(player.getName(), l);
 				}
 			}
 		

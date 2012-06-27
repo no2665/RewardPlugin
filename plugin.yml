@@ -10,8 +10,18 @@ commands:
       description: Delete a whole set of rewards
       permissions: editConfigPerms
       usage: /deleteReward <level>
-    
+   receive:
+      description: Receive your rewards
+      permissions: receiveRewards
+      aliases: receiveRewards
+   listRewards:
+      description: See the rewards that you can get.
+      permissions: receiveRewards
+      
 permissions:
    editConfigPerms:
       description: Allows you to edit the config file from commands
       default: op
+   receiveRewards:
+      description: Allows to players to receive rewards.
+      default: true
