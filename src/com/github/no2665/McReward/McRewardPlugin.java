@@ -14,10 +14,11 @@ import java.util.Scanner;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,15 +37,13 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		}
 	}
 	
-	//Everything starts here
 	@Override
 	public void onEnable(){ 
 		validJoins = loadLoginMap("plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
 		playersRewards = loadRewardMap("plugins" + File.separator + "mcReward" + File.separator + "PlayerData.bin");
 		this.getServer().getPluginManager().registerEvents(this, this);
 	}
-	 
-	//And ends here
+	
 	@Override
 	public void onDisable(){ 
 		saveLoginMap(validJoins, "plugins" + File.separator + "mcReward" + File.separator + "mcRewardData.bin");
@@ -52,14 +51,12 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		this.getServer().getScheduler().cancelTasks(this);
 	}
 
-	//Try PlayerJoinEvent instead. To see if the message is delayed or not?
 	@EventHandler
-	public void onPlayerLogin(PlayerLoginEvent event){
+	public void onPlayerLogin(PlayerJoinEvent event){
 		reloadConfig();
 		if(getConfig().getBoolean("Enabled")){
 			if(getConfig().contains("Rewards")){
 				Player player = event.getPlayer();
-				//Create new data for new players
 				if(!validJoins.containsKey(player.getName())){
 					validJoins.put(player.getName(), System.currentTimeMillis());
 					ItemPicker.pickItem(player, this);
@@ -67,8 +64,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				}
 				else{
 					long lastValidJoin = validJoins.get(player.getName());
-					if(System.currentTimeMillis() - lastValidJoin >= getTimeBetweenRewards()){
-						//Reset timer, and reward player
+					if(System.currentTimeMillis() - lastValidJoin >= getTimeBetweenRewards(player)){
 						validJoins.put(player.getName(), System.currentTimeMillis());
 						ItemPicker.pickItem(player, this);
 						sendMessage(player);
@@ -79,29 +75,40 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 	}
 	
 	private void sendMessage(final Player player){
-		//Send the player a friendly message.
-		if(getConfig().contains("RewardMessage")){
+		if(getConfig().contains("Messages.rewardsReady")){
 			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 				public void run(){
-					player.sendMessage(getConfig().getString("RewardMessage"));
+					player.sendMessage(getConfig().getString("Messages.rewardsReady"));
 				}
 			}, 20L);
 		}
 	}
 	
-	private long getTimeBetweenRewards(){
-		String[] split = getConfig().getString("TimeBetweenRewards").split(":");
+	private long getTimeBetweenRewards(Player player){
+		String[] defaultSplit = getConfig().getString("TimeBetweenRewards").split(":");
 		long time = 0;
-		for(int i = 0; i < split.length; i++){
-			if(i == 0){
-				time += Integer.parseInt(split[0]) * 86400000;
+		for(int i = 0; i < defaultSplit.length; i++){
+			if(i == 0) time += Integer.parseInt(defaultSplit[0]) * 86400000;
+			else if(i == 1) time += Integer.parseInt(defaultSplit[1]) * 3600000;
+			else if(i == 2) time += Integer.parseInt(defaultSplit[2]) * 60000;
+		}
+		int powerLevel = Users.getProfile(player).getPowerLevel();
+		Map<?, ?> map = null;
+		for(Map<?, ?> m : getConfig().getMapList("Rewards")){
+			if(Integer.parseInt(m.get("level").toString()) <= powerLevel){
+				map = m;
 			}
-			else if(i == 1){
-				time += Integer.parseInt(split[1]) * 3600000;
+			else break;
+		}
+		if(map.containsKey("time")){
+			String[] levelSplit = map.get("time").toString().split(":");
+			long levelTime = 0;
+			for(int i = 0; i < levelSplit.length; i++){
+				if(i == 0) levelTime += Integer.parseInt(levelSplit[0]) * 86400000;
+				else if(i == 1) levelTime += Integer.parseInt(levelSplit[1]) * 3600000;
+				else if(i == 2) levelTime += Integer.parseInt(levelSplit[2]) * 60000;
 			}
-			else if(i == 2){
-				time += Integer.parseInt(split[2]) * 60000;
-			}
+			return levelTime;
 		}
 		return time;
 	}
@@ -152,8 +159,9 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 	
 	public void giveRewards(Player player){
 		ArrayList<ItemStack> l = (ArrayList<ItemStack>) playersRewards.get(player.getName());
-		if(l.isEmpty()){
-			player.sendMessage("You currently do not have any rewards to collect");
+		if(l.isEmpty() && getConfig().contains("Messages.noRewards")){
+			player.sendMessage(getConfig().getString("Messages.noRewards"));
+			//dowut
 		}
 		else{
 			int highestIndex = -1;
@@ -164,7 +172,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 					highestIndex = i;
 				}
 				else{
-					player.sendMessage("Unable to give you all of your rewards");
+					if(getConfig().contains("Messages.unableToGiveRewards")) player.sendMessage(getConfig().getString("Messages.unableToGiveRewards"));
 					break;
 				}
 			}
@@ -177,6 +185,16 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		}
 	}
 	
+	public boolean isInt(String t){
+		try{
+			Integer.parseInt(t);
+			return true;
+		}
+		catch(NumberFormatException e){
+			return false;
+		}
+	}
+	
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if(command.getName().equals("receive") || command.getAliases().contains("receiveRewards")){
@@ -184,6 +202,10 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				if(playersRewards.containsKey(sender.getName())){
 					giveRewards((Player) sender);
 				}
+			}
+			else{
+				if(getConfig().contains("Messages.noPermission"))
+					sender.sendMessage(getConfig().getString("Messages.noPermission"));
 			}
 		}
 		else if(command.getName().equals("listRewards")){
@@ -209,7 +231,17 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 						else if(item.contains(":")){
 							item = (item.split(":"))[0];
 						}
-						item = Material.getMaterial(Integer.parseInt(item)).toString().toLowerCase();
+						if(isInt(item)){
+							item = Material.getMaterial(Integer.parseInt(item)).toString().toLowerCase();
+						}
+						else{
+							Material m = Material.matchMaterial(item);
+							if(m != null) item = m.toString().toLowerCase();
+							else{
+								getLogger().warning("Reward " + item + " is not a valid item! Maybe you misspelled the name?");
+								item = "INVALID";
+							}
+						}
 						int quantity = 1;
 						if(scan.hasNext()) quantity = scan.nextInt();
 						rewardString += item + " x" + quantity + ", "; 
@@ -225,8 +257,43 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 					sender.sendMessage("This much money: " + moneyString);
 				}
 				if(map.containsKey("enchantments")){
-					sender.sendMessage("These enchanted items: " + map.get("enchantments"));
+					Scanner scan = new Scanner(map.get("enchantments").toString());
+					String enchantmentString = "";
+					String current = ":";
+					while(scan.hasNext()){
+						String itemType;
+						if(current.equals(":")) itemType = scan.next();
+						else itemType = current;
+						if(isInt(itemType)){
+							itemType = Material.getMaterial(Integer.parseInt(itemType)).toString().toLowerCase();
+						}
+						else{
+							Material m = Material.matchMaterial(itemType);
+							if(m != null) itemType = m.toString().toLowerCase();
+							else{
+								getLogger().warning("Reward " + itemType + " is not a valid item! Maybe you misspelled the name?");
+								itemType = "INVALID";
+							}
+						}
+						enchantmentString += itemType + " with ";
+						while(scan.hasNext()){
+							current = scan.next();
+							if(!current.contains(":")) break;
+							String[] enchantments = current.split(":");
+							if(isInt(enchantments[0])){
+								enchantmentString += Enchantment.getById(Integer.parseInt(enchantments[0])).getName() + " at level " + enchantments[1] + ", ";
+							}
+							else{
+								enchantmentString += enchantments[0] + " at level " + enchantments[1] + ", ";
+							}
+						}
+					}
+					sender.sendMessage("These enchanted items: " + enchantmentString);
 				}
+			}
+			else{
+				if(getConfig().contains("Messages.noPermission"))
+					sender.sendMessage(getConfig().getString("Messages.noPermission"));
 			}
 		}
 		else if(command.getName().equals("deleteReward")){
@@ -248,7 +315,10 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				}
 				else sender.sendMessage("Level " + level + " is not included in the config file.");
 			}
-			else sender.sendMessage("You do not have permission to use this command"); 
+			else{
+				if(getConfig().contains("Messages.noPermission"))
+					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+			}
 		}
 		else if(command.getName().equals("addReward")){
 			if(sender.hasPermission("editConfigPerms")){
@@ -281,7 +351,10 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				getConfig().set("Rewards", configList);
 				saveConfig();
 			}
-			else sender.sendMessage("You do not have permission to use this command"); 
+			else {
+				if(getConfig().contains("Messages.noPermission"))
+					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+			}
 		}
 		return true;
 	}

@@ -7,6 +7,7 @@ import java.util.Scanner;
 
 import net.milkbowl.vault.economy.Economy;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentWrapper;
@@ -52,8 +53,6 @@ public class ItemPicker {
 				int powerLevel = Users.getProfile(player).getPowerLevel();
 				Map<?, ?> map = null;
 				for(Map<?, ?> m : config.getMapList("Rewards")){
-					//Check each level set in the config file to see if it is greater than
-					//the players power level, and if it is, stop checking
 					if(Integer.parseInt(m.get("level").toString()) <= powerLevel){
 						map = m;
 					}
@@ -82,12 +81,23 @@ public class ItemPicker {
 						if(scanItems.hasNext()) quantity = scanItems.nextInt();
 						if(itemType.contains(":")){
 							String[] split = itemType.split(":");
-							int itemID = Integer.parseInt(split[0]);
-							int itemData = Integer.parseInt(split[1]);
-							addRewardsToList(new MaterialData(itemID, (byte) itemData).toItemStack(quantity));
+							byte itemData = Byte.parseByte(split[1]);
+							if(plugin.isInt(split[0])) addRewardsToList(new MaterialData(Integer.parseInt(split[0]), itemData).toItemStack(quantity));
+							else{
+								Material m = Material.matchMaterial(split[0]);
+								if(m != null) addRewardsToList(new MaterialData(m, itemData).toItemStack(quantity));
+								else plugin.getLogger().warning("Reward " + split[0] + " is not a valid item! Maybe you misspelled the name?");
+							}
 						}
 						else{
-							addRewardsToList(new ItemStack(Integer.parseInt(itemType), quantity));
+							if(plugin.isInt(itemType)){
+								addRewardsToList(new ItemStack(Integer.parseInt(itemType), quantity));
+							}
+							else{
+								Material m = Material.matchMaterial(itemType);
+								if(m != null) addRewardsToList(new ItemStack(m, quantity));
+								else plugin.getLogger().warning("Reward " + itemType + " is not a valid item! Maybe you misspelled the name?");
+							}
 						}
 					}
 				}
@@ -129,21 +139,47 @@ public class ItemPicker {
 			public void addEnchantment(String selectedEnchantment){
 				Scanner scan = new Scanner(selectedEnchantment);
 				ItemStack item = null;
+				String current = ":";
 				while(scan.hasNext()){
 					try{
-						item = new ItemStack(scan.nextInt());
+						String itemType;
+						if(current.equals(":")) itemType = scan.next();
+						else itemType = current;
+						if(plugin.isInt(itemType)){
+							item = new ItemStack(Integer.parseInt(itemType));
+						}
+						else{
+							Material m = Material.matchMaterial(itemType);
+							if(m != null) item = new ItemStack(m);
+							else{
+								plugin.getLogger().warning("Reward " + itemType + " is not a valid item! Maybe you misspelled the name?");
+								throw new Exception();
+							}
+						}
 						while(scan.hasNext()){
-							String[] enchantments = scan.next().split(":");
-							Enchantment e = new EnchantmentWrapper(Integer.parseInt(enchantments[0]));
+							current = scan.next();
+							if(!current.contains(":")) break;
+							String[] enchantments = current.split(":");
+							Enchantment e;
+							if(plugin.isInt(enchantments[0])) e = new EnchantmentWrapper(Integer.parseInt(enchantments[0]));
+							else{
+								e = Enchantment.getByName(enchantments[0]);
+								if(e == null){
+									plugin.getLogger().warning("Enchantment " + enchantments[0] + " is not a valid enchantment! Maybe you misspelled the name?");
+									throw new Exception();
+								}
+							}
 							if(e.canEnchantItem(item)){
 								int level = Integer.parseInt(enchantments[1]);
 								if(level < e.getStartLevel()) item.addEnchantment(e, e.getStartLevel());
 								else if(level > e.getMaxLevel()) item.addEnchantment(e, e.getMaxLevel());
 								else item.addEnchantment(e, level);
 							}
-							if(scan.hasNextInt()) break;
+							else{
+								plugin.getLogger().warning("Enchantment " + e.getName() + " cannot be used on the item " + item.getType().toString() + "!");
+							}
 						}
-						player.getInventory().addItem(item);
+						addRewardsToList(item);
 					}
 					catch(Exception e){
 						plugin.getLogger().warning("Enchanting failed! Check the config file to see if you have set it up correctly.");

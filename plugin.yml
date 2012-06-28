@@ -1,6 +1,6 @@
 name: mcReward
 main: com.github.no2665.McReward.McRewardPlugin
-version: 0.1
+version: 1.3
 commands:
    addReward:
       description: Add a rewards to a new or existing set of rewards
@@ -23,5 +23,5 @@ permissions:
       description: Allows you to edit the config file from commands
       default: op
    receiveRewards:
-      description: Allows to players to receive rewards.
+      description: Allows players to receive rewards.
       default: true
