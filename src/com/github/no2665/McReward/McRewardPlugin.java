@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -78,20 +79,13 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 		if(getConfig().contains("Messages.rewardsReady")){
 			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 				public void run(){
-					player.sendMessage(getConfig().getString("Messages.rewardsReady"));
+					player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.rewardsReady")));
 				}
 			}, 20L);
 		}
 	}
 	
 	private long getTimeBetweenRewards(Player player){
-		String[] defaultSplit = getConfig().getString("TimeBetweenRewards").split(":");
-		long time = 0;
-		for(int i = 0; i < defaultSplit.length; i++){
-			if(i == 0) time += Integer.parseInt(defaultSplit[0]) * 86400000;
-			else if(i == 1) time += Integer.parseInt(defaultSplit[1]) * 3600000;
-			else if(i == 2) time += Integer.parseInt(defaultSplit[2]) * 60000;
-		}
 		int powerLevel = Users.getProfile(player).getPowerLevel();
 		Map<?, ?> map = null;
 		for(Map<?, ?> m : getConfig().getMapList("Rewards")){
@@ -109,6 +103,13 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				else if(i == 2) levelTime += Integer.parseInt(levelSplit[2]) * 60000;
 			}
 			return levelTime;
+		}
+		String[] defaultSplit = getConfig().getString("TimeBetweenRewards").split(":");
+		long time = 0;
+		for(int i = 0; i < defaultSplit.length; i++){
+			if(i == 0) time += Integer.parseInt(defaultSplit[0]) * 86400000;
+			else if(i == 1) time += Integer.parseInt(defaultSplit[1]) * 3600000;
+			else if(i == 2) time += Integer.parseInt(defaultSplit[2]) * 60000;
 		}
 		return time;
 	}
@@ -160,19 +161,21 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 	public void giveRewards(Player player){
 		ArrayList<ItemStack> l = (ArrayList<ItemStack>) playersRewards.get(player.getName());
 		if(l.isEmpty() && getConfig().contains("Messages.noRewards")){
-			player.sendMessage(getConfig().getString("Messages.noRewards"));
-			//dowut
+			player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.noRewards")));
 		}
 		else{
+			boolean showRewards = getConfig().getBoolean("ShowRewards");
+			String givenRewards = "";
 			int highestIndex = -1;
 			HashMap<Integer, ItemStack> unableToGive = null;
 			for(int i = 0; i < l.size(); i++){
 				unableToGive = player.getInventory().addItem(l.get(i));
+				if(showRewards) givenRewards += l.get(i).getType().toString().toLowerCase() + " x " + l.get(i).getAmount() +  ", ";
 				if(unableToGive.isEmpty()){
 					highestIndex = i;
 				}
 				else{
-					if(getConfig().contains("Messages.unableToGiveRewards")) player.sendMessage(getConfig().getString("Messages.unableToGiveRewards"));
+					if(getConfig().contains("Messages.unableToGiveRewards")) player.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.unableToGiveRewards")));
 					break;
 				}
 			}
@@ -182,6 +185,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 				}
 			}
 			playersRewards.put(player.getName(), l);
+			if(showRewards) player.sendMessage("You have received: " + givenRewards.substring(0, givenRewards.length() - 2));
 		}
 	}
 	
@@ -205,7 +209,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 			}
 			else{
 				if(getConfig().contains("Messages.noPermission"))
-					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.noPermission")));
 			}
 		}
 		else if(command.getName().equals("listRewards")){
@@ -246,7 +250,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 						if(scan.hasNext()) quantity = scan.nextInt();
 						rewardString += item + " x" + quantity + ", "; 
 					}
-					sender.sendMessage("These rewards: " + rewardString);
+					sender.sendMessage("These rewards: " + rewardString.substring(0, rewardString.length() - 2));
 				}
 				if(map.containsKey("money")){
 					String moneyString = map.get("money").toString();
@@ -288,12 +292,30 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 							}
 						}
 					}
-					sender.sendMessage("These enchanted items: " + enchantmentString);
+					sender.sendMessage("These enchanted items: " + enchantmentString.substring(0, enchantmentString.length() - 2));	
+				}
+				if(getConfig().contains("ShowTime") && getConfig().getBoolean("ShowTime")){
+					long seconds = (validJoins.get(sender.getName()) - (System.currentTimeMillis() - getTimeBetweenRewards((Player) sender))) / 1000;
+					if(seconds <= 0){
+						sender.sendMessage("Your rewards are ready! Log back in to receive them.");
+					}
+					else {
+						int minutes = 0, hours = 0;
+						if(seconds >= 60){
+							minutes = (int) (seconds / 60);
+							seconds -= minutes * 60;
+							if(minutes >= 60){
+								hours = minutes / 60;
+								minutes -= hours * 60;
+							}
+						}
+						sender.sendMessage("You have to wait " + (hours == 0 ? "" : hours + " hours, ") + (minutes == 0 ? "" : minutes + " minutes, ") + (seconds == 0 ? "" : seconds + " seconds ") + "till your next reward.");
+					}
 				}
 			}
 			else{
 				if(getConfig().contains("Messages.noPermission"))
-					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.noPermission")));
 			}
 		}
 		else if(command.getName().equals("deleteReward")){
@@ -317,7 +339,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 			}
 			else{
 				if(getConfig().contains("Messages.noPermission"))
-					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.noPermission")));
 			}
 		}
 		else if(command.getName().equals("addReward")){
@@ -353,7 +375,7 @@ public class McRewardPlugin extends JavaPlugin implements Listener{
 			}
 			else {
 				if(getConfig().contains("Messages.noPermission"))
-					sender.sendMessage(getConfig().getString("Messages.noPermission"));
+					sender.sendMessage(ChatColor.translateAlternateColorCodes('&', getConfig().getString("Messages.noPermission")));
 			}
 		}
 		return true;

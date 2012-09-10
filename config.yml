@@ -2,7 +2,9 @@
 #
 #Enabled: <True/False>
 #TimeBetweenRewards: <Days>:<Hours>:<Minutes>
-#automaticCollection: <true/false>
+#AutomaticCollection: <true/false>
+#ShowTime: <true/false>
+#ShowRewards: <true/false>
 #Messages:
 #   rewardsReady: <Message to send when players receive/have rewards to collect>
 #   unableToGiveRewards: <Message to send when players haven't gotten all of their items>
@@ -22,7 +24,9 @@
 #
 #Enabled: True #if false players will no longer receive rewards
 #TimeBetweenRewards: 1:12:0 #Rewards will be given every 1 day and 12 hours
-#automaticCollection: false #Players will have to use the /receive command to get their rewards
+#AutomaticCollection: false #Players will have to use the /receive command to get their rewards
+#ShowTime: true #Players will see the time they have to wait till their next rewards when using the command /listRewards
+#ShowRewards: false #Players will not be told what they just receive. Set to true if you want players to get a message telling them what their reward was.
 #Messages:
 #   rewardsReady: You have rewards to collect. Use /receive to get them!
 #   unableToGiveRewards: Your inventory is full. Use /receive when your inventory isn't full to receive the rest of your rewards.
@@ -53,7 +57,7 @@
 #in this case a yellow flower. The player will NOT get the level 0
 #rewards.
 #
-#Rewards, Messages and automaticCollection are optional
+#Rewards, Messages, AutomaticCollection, ShowTime and ShowRewards are optional
 #Enabled and TimeBetweenRewards are required.
 #Of the Rewards tag, the level tag is required, 
 #but all other tags are optional.
@@ -69,6 +73,9 @@
 #Be careful as this can give players any items (including sponges, chain-mail, portal blocks etc)
 #The two random features can be combined.
 #   rewards: <Data value> <Quantity> ... or random or <Data value> <Quantity> ...
+#
+#Messages support chat colours using the & character followed by 0-9 or e-f.
+#If you find the message isn't showing correctly surround it with the '' characters.
 #
 # ------------ Enchantment IDs ------------
 # Name                     - MaxLevel - ID
@@ -95,8 +102,10 @@
 # ARROW_INFINITE           - 1        - 51
 
 Enabled: True
-TimeBetweenRewards: 0:0:1
-automaticCollection: false
+TimeBetweenRewards: 1:0:0
+AutomaticCollection: false
+ShowRewards: false
+ShowTime: true
 Messages:
    rewardsReady: You have rewards ready for collection!
    unableToGiveRewards: Unable to give you all of your rewards

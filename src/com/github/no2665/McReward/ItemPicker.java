@@ -36,7 +36,7 @@ public class ItemPicker {
 						addEnchantment(selectedMap.get("enchantments").toString());
 					}
 				}
-				if(config.contains("automaticCollection") && config.getBoolean("automaticCollection")){
+				if(config.contains("AutomaticCollection") && config.getBoolean("AutomaticCollection")){
 					plugin.giveRewards(player);
 				}
 			}
